@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="16dp"
+        android:orientation="vertical"
+        android:id="@+id/main">
+
+        <!-- Title -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Select Fruits:"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+
+        <!-- Checkboxes for Fruit Selection -->
+        <CheckBox
+            android:id="@+id/checkBoxApple"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Apple"/>
+
+        <CheckBox
+            android:id="@+id/checkBoxBanana"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Banana"/>
+
+        <CheckBox
+            android:id="@+id/checkBoxMango"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Mango"/>
+
+        <CheckBox
+            android:id="@+id/checkBoxOrange"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Orange"/>
+
+        <CheckBox
+            android:id="@+id/checkBoxGrapes"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Grapes"/>
+
+        <!-- Button to Add Selected Fruits -->
+        <Button
+            android:id="@+id/buttonAdd"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Add to List"
+            android:layout_gravity="center_horizontal"
+            android:padding="10dp"
+            android:backgroundTint="#FF6200EE"
+            android:textColor="#FFFFFF"
+            android:layout_marginTop="10dp"/>
+
+        <!-- Selected Fruits ListView -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Selected Fruits:"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginTop="15dp"
+            android:layout_marginBottom="8dp"/>
+
+        <ListView
+            android:id="@+id/listViewSelectedFruits"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:divider="@android:color/darker_gray"
+            android:dividerHeight="1dp"
+            android:padding="8dp"
+            android:layout_marginBottom="10dp"/>
+    </LinearLayout>
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

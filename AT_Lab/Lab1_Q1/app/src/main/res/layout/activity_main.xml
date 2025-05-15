@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:gravity="center">
+
+    <!-- ImageView for profile picture -->
+    <ImageView
+        android:id="@+id/imageViewProfile"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_marginBottom="20dp"
+        android:src="@drawable/ic_default_profile"
+        android:contentDescription="Profile Picture"
+        android:scaleType="centerCrop" />
+
+
+    <!-- Name input field -->
+    <EditText
+        android:id="@+id/editTextName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter your name"
+        android:inputType="textPersonName" />
+
+    <!-- Job Title input field -->
+    <EditText
+        android:id="@+id/editTextJobTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter your job title"
+        android:inputType="text" />
+
+    <!-- Company input field -->
+    <EditText
+        android:id="@+id/editTextCompany"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter your company name"
+        android:inputType="text" />
+
+    <!-- Email input field -->
+    <EditText
+        android:id="@+id/editTextEmail"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter your email"
+        android:inputType="textEmailAddress" />
+
+    <!-- Button to submit the profile -->
+    <Button
+        android:id="@+id/buttonSubmit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Submit" />
+
+    <!-- TextViews to display the user profile after submission -->
+    <TextView
+        android:id="@+id/textViewProfile"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="User Profile will appear here."
+        android:textSize="18sp"
+        android:visibility="gone"
+        android:layout_marginTop="16dp"/>
+
+</LinearLayout>

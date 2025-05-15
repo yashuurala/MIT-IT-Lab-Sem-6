@@ -1,0 +1,474 @@
+LAB 6
+
+from itertools import combinations                   //It is used later to generate possible subsets (antecedents and consequents) for association rules.
+
+def generate_candidates(prev_frequent, k):           //prev_frequent: A set of previously found frequent itemsets of size 𝑘−1 . k: The desired size of the new candidate itemsets.   
+    candidates = set()                               //candidates is an empty set that will store newly generated candidate itemsets.
+    prev_list = list(prev_frequent)                  //prev_frequent is converted to a list (prev_list) so that we can index and iterate through itemsets.
+
+    for i in range(len(prev_list)):
+        for j in range(i + 1, len(prev_list)):
+            candidate = prev_list[i] | prev_list[j]   // Union of two itemsets
+            if len(candidate) == k:                   //resulting itemset's size is exactly k, it is added to candidates.
+                candidates.add(candidate)
+
+    return candidates
+
+
+def count_occurrences(transactions, candidates):      //candidates: A set of candidate itemsets whose occurrences we need to count.
+    counts = {itemset: 0 for itemset in candidates}    //Creates a dictionary (counts) where: Keys: Candidate itemsets Values: Initially set to 0
+
+    for transaction in transactions:
+        for candidate in candidates:
+            if candidate.issubset(transaction):
+                counts[candidate] += 1
+
+    return counts
+
+
+def apriori(transactions, min_support):
+    num_transactions = len(transactions)
+    support_threshold = min_support * num_transactions
+    itemsets = {frozenset([item]) for transaction in transactions for item in transaction}
+                                                   // Each item is a frozenset
+    # Get frequent 1-itemsets
+    counts = count_occurrences(transactions, itemsets)
+    frequent_itemsets = {itemset: count for itemset, count in counts.items() if count >= support_threshold}                                 //counts.items() returns a list of key-value pairs any itemset with count < support_threshold is discarded.Constructs a new dictionary containing only frequent itemsets.
+
+    result = frequent_itemsets.copy()
+    k = 2                                          //Find frequent 2-itemsets.            
+
+    while frequent_itemsets:
+        candidates = generate_candidates(set(frequent_itemsets.keys()), k)
+        counts = count_occurrences(transactions, candidates)
+        frequent_itemsets = {itemset: count for itemset, count in counts.items() if count >= support_threshold}
+        result.update(frequent_itemsets)
+        k += 1
+
+    return result, num_transactions
+
+
+def generate_association_rules(frequent_itemsets, num_transactions, min_confidence):
+    rules = []
+
+    for itemset in frequent_itemsets:
+        if len(itemset) > 1:                         //Only considers itemsets with more than 1 item (because rules require at least one antecedent and one consequent).
+            for i in range(1, len(itemset)):
+                for antecedent in combinations(itemset, i):        //generates all possible subsets 
+                    antecedent = frozenset(antecedent)
+                    consequent = itemset - antecedent
+                    support_itemset = frequent_itemsets[itemset] / num_transactions
+                    support_antecedent = frequent_itemsets[antecedent] / num_transactions
+                    confidence = support_itemset / support_antecedent
+
+                    if confidence >= min_confidence:
+                        rules.append((antecedent, consequent, support_itemset, confidence))
+
+    return rules
+
+
+def get_transactions():
+    num_transactions = int(input("Enter the number of transactions: "))
+    transactions = []
+
+    for i in range(num_transactions):
+        items = input(f"Enter items for transaction {i + 1} (comma-separated): ").split(',')                                         // Splits the entered items based on commas.items becomes a list of item strings.
+        transactions.append(set(item.strip() for item in items))         //item.strip() → Removes extra spaces around each item.set(...) → Converts the list of items into a set
+
+    return transactions
+
+
+def get_parameters():
+    min_support = float(input("Enter minimum support (0 to 1): "))
+    min_confidence = float(input("Enter minimum confidence (0 to 1): "))
+    return min_support, min_confidence
+
+
+# Get input transactions
+transactions = get_transactions()
+
+# Get minimum support and confidence
+min_support, min_confidence = get_parameters()
+
+# Run Apriori Algorithm
+frequent_itemsets, num_transactions = apriori(transactions, min_support)
+
+# Generate Association Rules
+rules = generate_association_rules(frequent_itemsets, num_transactions, min_confidence)
+
+# Display Frequent Itemsets
+print("\nFrequent Itemsets:")
+for itemset, count in frequent_itemsets.items():
+    print(f"{set(itemset)} - Support: {count / num_transactions:.2f}")
+
+# Display Association Rules
+print("\nAssociation Rules:")
+for antecedent, consequent, support, confidence in rules:
+    print(f"{set(antecedent)} → {set(consequent)} | Support: {support:.2f} | Confidence: {confidence:.2f}")
+
+
+
+
+*******************************************************************************************
+LAB 7
+
+import numpy as np                                       //NumPy (np) is used for numerical operations
+
+def euclidean_distance(x1, x2):
+    return np.sqrt(np.sum((x1 - x2) ** 2))               //(x1 - x2) ** 2
+This squares each element.np.sum() adds up all the squared values.
+
+def k_means(X, k, max_iters=250):                        //X:array representing the dataset, where each row is a data point, and each column is a feature.k: Number of clusters.
+    num_samples, num_features = X.shape                  //X.shape gives the dimensions of the dataset
+    indices = np.random.choice(num_samples, k, replace=False)          //Randomly selects k unique indices from the dataset.
+    centroids = X[indices]
+
+//EX--
+X = np.array([[2, 3], [5, 8], [1, 2], [6, 9], [3, 5]])
+and indices = [1, 3] is selected randomly, then:
+centroids = [[5, 8], [6, 9]]  # Initial centroids//
+
+
+    clusters = [[] for _ in range(k)]                //Creates a list of empty lists to store the indices of points assigned to each cluster. EX-- clusters = [[], []]  # Two empty lists for two clusters
+
+    for i in range(max_iters):
+        clusters = [[] for _ in range(k)]
+        for idx, sample in enumerate(X):              //enumerate(X) allows us to iterate through all data points in X. idx: Index of the current data point. sample: The actual data point
+            distances = [euclidean_distance(sample, centroid) for centroid in centroids]
+                                                      //Computes the Euclidean distance between the current sample and each centroid.
+            closest_cluster = np.argmin(distances)    //np.argmin(distances): Finds the index of the smallest distance
+            clusters[closest_cluster].append(idx)
+
+        old_centroids = centroids.copy()
+        centroids = np.array([
+            np.mean(X[cluster], axis=0) if len(cluster) > 0 else old_centroids[i]
+            for i, cluster in enumerate(clusters)
+        ])                                          //Updates each centroid as the mean of all points in its cluster.If a cluster has no points, retains the old centroid.
+                                                    //terates over each cluster (using enumerate(clusters)).i: Cluster index (0, 1, 2, ...). cluster: A list of indices representing the data points in that cluster. 
+                                                    //centroids = np.array([...]) Ensures that centroids remain a structured
+
+        if np.all(old_centroids == centroids) and i > 200:
+            print("Broke due to optimality at iter:", i, "The points are:", centroids)
+            break
+                                                   //f centroids do not change between iterations and the iteration count is greater than 200, it prints the centroids and exits early.
+
+    return clusters, centroids
+
+if __name__ == '__main__':
+    import matplotlib.pyplot as plt                //imports Matplotlib for visualization
+
+    # === Get user input ===
+    n = int(input("Enter number of data points: "))
+    X = []
+
+    print("Enter each point as 'x y' (space-separated):")
+    for _ in range(n):
+        x, y = map(float, input().split())        //input().split():Takes the user input and splits it into two parts based on spaces.map(float, ...): Converts both values from strings to floating-point numbers.
+        X.append([x, y])                     //Creates a list [x, y] representing a 2D point. Appends it to X, which stores all the user-inputted points.
+
+    X = np.array(X)                             //Converts X into a NumPy array.
+    k = int(input("Enter number of clusters (k): "))
+
+    # Run K-Means
+    clusters, centroids = k_means(X, k=k)
+
+    # === Plotting ===
+    fig, ax = plt.subplots(figsize=(8, 6))       //plt.subplots(): Creates a figure (fig) and axes (ax) for plotting. figsize=(8,6): Defines the figure size as 8 inches wide and 6 inches tall for better readability.
+
+    for i, index in enumerate(clusters):
+        points = X[index].T                       //X[index]: Retrieves all data points belonging to the current cluster..T (Transpose): Converts from Nx2 shape to 2xN
+        ax.scatter(*points, label=f'Cluster {i+1}')    //*points: Unpacks the transposed array.label=f'Cluster {i+1}': Labels each cluster (e.g., "Cluster 1", "Cluster 2").
+
+    for point in centroids:
+        ax.scatter(*point, marker="x", color='black', linewidth=2, s=100)
+                                                 //Loops through each point in centroids.marker="x": Uses an "x" marker for centroids. color='black': Marks centroids in black. linewidth=2: Makes the marker thicker. s=100: Sets the size of the marker.
+
+    ax.set_title("K-Means Clustering Result")
+    ax.legend()                      //Displays labels for different clusters.
+    plt.grid(True)                    //Enables grid lines for better readability.
+    plt.show()
+
+
+
+
+*******************************************************************************************
+LAB 8
+
+Q1
+
+import pandas as pd                        //pandas (pd): For handling the dataset. 
+import numpy as np
+import pprint                             //pprint: For printing the decision tree in a readable format
+
+def entropy(y):
+    values, counts = np.unique(y, return_counts=True)        //Finds unique values in y (target) and their counts.
+    probabilities = counts / counts.sum()
+    return -np.sum(probabilities * np.log2(probabilities))       //-Summ(pi*log2(pi))
+
+def information_gain(X, y, feature):                          
+                                                              //X: This is a DataFrame containing the features. y: This is a Series containing the target variable. feature: The specific feature (column) in X for which we want to compute information gain.
+
+    total_entropy = entropy(y)
+    values, counts = np.unique(X[feature], return_counts=True)       
+                                                   //This finds the unique values in the given feature column and counts how often each appears.If feature = 'Outlook' and X['Outlook'] = ['Sunny', 'Sunny', 'Rainy', 'Cloudy', 'Sunny'], then: values = ['Cloudy', 'Rainy', 'Sunny']
+counts = [1, 1, 3]
+
+
+    weighted_entropy = 0                   //weighted_entropy: This variable will store the weighted sum of the entropies of the subsets.
+    subset_entropies = {}                  //subset_entropies: A dictionary to store the entropy of each subset created by splitting on feature.
+
+    for val, count in zip(values, counts):             //Loop through each unique value of the feature and its corresponding count
+
+        subset_y = y[X[feature] == val]                //If feature = 'Outlook' and val = 'Sunny', subset_y will contain only the y values where the outlook is "Sunny".Creates a subset of the target variable y where feature == val
+
+        ent = entropy(subset_y)                        //Each subset has its own entropy, which shows how uncertain the target variable (y) is within that subset.
+
+        weighted_entropy += (count / sum(counts)) * ent
+        subset_entropies[val] = ent
+
+    gain = total_entropy - weighted_entropy
+    return gain, total_entropy, subset_entropies
+
+
+def best_split(X, y):
+    best_feature = None
+    max_gain = -1
+    for feature in X.columns:
+        gain, _, _ = information_gain(X, y, feature)
+        if gain > max_gain:
+            max_gain = gain
+            best_feature = feature
+    return best_feature
+
+
+def id3(X, y, features):
+    if len(np.unique(y)) == 1:               
+        return np.unique(y)[0]                            //If all elements in y belong to the same class, no further splitting is needed. The function returns that class label 
+
+    if len(features) == 0:
+        return y.value_counts().idxmax()                    //If no features are left, we cannot split further. We return the majority class in y (the most frequent label).y = ['Yes', 'No', 'Yes', 'Yes'] The majority class is "Yes", so the function returns "Yes".
+
+    best_feature = best_split(X, y)
+
+    tree = {best_feature: {}}
+
+    for value in np.unique(X[best_feature]):                     //Iterates over each unique value of best_feature.
+        subset_X = X[X[best_feature] == value].drop(columns=[best_feature])
+                                                           //Removes best_feature from subset_X (since it has been used for splitting).
+        subset_y = y[X[best_feature] == value]               //Creates a subset of the dataset where best_feature == value.
+        tree[best_feature][value] = id3(subset_X, subset_y, subset_X.columns)
+                                                             //Calls id3 recursively to construct the subtree for each value of best_feature
+    return tree
+
+
+df = pd.read_csv("play_ball.csv")  # Split into features and target
+
+X = df.drop(columns=['PlayBall'])               //X contains all features.Features (Outlook, Temperature, Humidity, Wind)
+y = df['PlayBall']                              //y contains the target label.Target (Yes/No)
+
+
+attribute = input("Enter attribute to compute entropy & info gain (e.g., Outlook, Temperature, Humidity, Wind): ").strip()
+
+gain, total_entropy, subset_entropies = information_gain(X, y, attribute)
+
+
+print(f"\nEntropy(S): {total_entropy:.4f}")
+
+for val, ent in subset_entropies.items():
+    print(f"Entropy(S_{val}): {ent:.4f}")
+
+print(f"Information Gain(S, {attribute}): {gain:.4f}")
+
+decision_tree = id3(X, y, X.columns)
+print("\nGenerated Decision Tree:")
+pprint.pprint(decision_tree)
+
+
+
+
+*********************************************************
+Q2
+
+import pandas as pd
+import numpy as np
+import pprint
+
+def entropy(y):
+    values, counts = np.unique(y, return_counts=True)
+    probabilities = counts / counts.sum()
+    return -np.sum(probabilities * np.log2(probabilities))
+
+def information_gain(X, y, feature):
+    total_entropy = entropy(y)
+    values, counts = np.unique(X[feature], return_counts=True)
+
+    weighted_entropy = 0
+    subset_entropies = {}
+    for val, count in zip(values, counts):
+        subset_y = y[X[feature] == val]
+        ent = entropy(subset_y)
+        weighted_entropy += (count / sum(counts)) * ent
+        subset_entropies[val] = ent
+
+    gain = total_entropy - weighted_entropy
+    return gain, total_entropy, subset_entropies
+
+def best_split(X, y):
+    best_feature = None
+    max_gain = -1
+    for feature in X.columns:
+        gain, _, _ = information_gain(X, y, feature)
+        if gain > max_gain:
+            max_gain = gain
+            best_feature = feature
+    return best_feature
+
+def id3(X, y, features):
+    if len(np.unique(y)) == 1:
+        return np.unique(y)[0]
+    if len(features) == 0:
+        return y.value_counts().idxmax()
+
+    best_feature = best_split(X, y)
+
+    tree = {best_feature: {}}
+    for value in np.unique(X[best_feature]):
+        subset_X = X[X[best_feature] == value].drop(columns=[best_feature])
+        subset_y = y[X[best_feature] == value]
+        tree[best_feature][value] = id3(subset_X, subset_y, subset_X.columns)
+
+    return tree
+
+def predict_from_tree(tree, sample):
+    if not isinstance(tree, dict):
+        return tree                            //This checks if tree is not a dictionary. If tree is not a dictionary, it means we have reached a leaf node. In this case, we directly return the predicted class ("Yes" or "No").tree is a dictionary, meaning it has keys.
+
+    feature = next(iter(tree))                //next(iter(tree)) extracts the first key of the dictionary.
+
+//tree = {'Outlook': {'Sunny': 'No', 'Overcast': 'Yes', 'Rain': 'Yes'}}
+feature = next(iter(tree))
+print(feature)  # Output: 'Outlook' //
+
+    feature_value = sample.get(feature)           //is used to retrieve the value of the feature from the new sample.
+
+    if feature_value not in tree[feature]:
+        return "Unknown" 
+
+    subtree = tree[feature][feature_value]               //The decision tree branches based on the feature value.
+    return predict_from_tree(subtree, sample)            //Recursively
+
+
+df = pd.read_csv("play_ball.csv")  
+
+# Split into features and target
+X = df.drop(columns=['PlayBall'])
+y = df['PlayBall']
+
+decision_tree = id3(X, y, X.columns)
+print("\nGenerated Decision Tree:")
+pprint.pprint(decision_tree)
+
+print("\nEnter details of a new sample to classify:")
+
+new_sample = {
+    'Outlook': input("Enter Outlook (Sunny/Overcast/Rain): ").strip(),
+    'Temperature': input("Enter Temperature (Hot/Mild/Cool): ").strip(),
+    'Humidity': input("Enter Humidity (High/Normal): ").strip(),
+    'Wind': input("Enter Wind (Weak/Strong): ").strip()
+}
+
+prediction = predict_from_tree(decision_tree, new_sample)
+
+print(f"\nPrediction: Play Ball = {prediction}")
+
+
+
+
+*******************************************************************************************
+LAB 9
+
+import pandas as pd
+import numpy as np
+
+def gaussian_probability(x, mean, variance):
+                                         //This function calculates the probability of x (a feature value) belonging to a certain class using the Gaussian (Normal) Distribution Formula.
+    exponent = np.exp(-((x - mean) ** 2) / (2 * variance))        //exp(-(x-mean)^2 / 2*variance)
+    return (1 / np.sqrt(2 * np.pi * variance)) * exponent         // 1 / sqrt (2*pi*variance) * exponent
+
+
+def compute_statistics(X, y):
+    class_labels = np.unique(y)        //Finds unique class labels (e.g., 0 and 1 for diabetes prediction)
+    statistics = {}
+
+    for label in class_labels:              //Loops through each unique class (0 for no diabetes, 1 for diabetes).
+
+        X_class = X[y == label]              //Extracts only those rows from X that belong to the current class.
+
+        statistics[label] = {
+            "mean": np.mean(X_class, axis=0),
+            "variance": np.var(X_class, axis=0) + 1e-6,      //with +1e-6 to prevent division by zero.
+            "prior": len(X_class) / len(X)                   //Prior Probability: P(Class) = (number of samples in class) / (total samples)
+        }
+
+    return statistics
+
+
+def predict(X, statistics):
+    predictions = []
+
+    for sample in X:
+        class_probabilities = {}
+        for label, params in statistics.items():                    
+                                    //Loops through each class and retrieves the precomputed mean, variance, and prior probability.statistics.items() returns all key-value pairs in the dictionary, where: Key (label): Represents the class label (e.g., 0 for non-diabetic, 1 for diabetic in the Pima dataset).Value (params): A dictionary containing the mean, variance, and prior probability of the class.
+
+            mean, variance, prior = params["mean"], params["variance"], params["prior"]
+
+            likelihood = np.prod(gaussian_probability(sample, mean, variance))
+                                                   //gaussian_probability(sample, mean, variance) returns an array of probabilities (one for each feature).np.prod(...) takes the product of all feature probabilities to get the combined likelihood.
+
+
+//sample = [3, 125, 80, 20, 85, 32, 0.5, 30]
+mean = [4.5, 120.5, 70.2, 20.4, 79.0, 30.5, 0.45, 33.1]
+variance = [1.2, 200.5, 150.6, 48.2, 140.3, 50.1, 0.03, 60.7]
+If the probabilities were: [0.3, 0.2, 0.1, 0.5, 0.6, 0.4, 0.9, 0.3]
+likelihood = 0.3 * 0.2 * 0.1 * 0.5 * 0.6 * 0.4 * 0.9 * 0.3 = 0.0001944  //
+
+
+            class_probabilities[label] = prior * likelihood
+
+//prior = 0.65  # Probability of class 0 occurring
+class_probabilities[0] = 0.65 * 0.0001944 = 0.00012636
+his is the probability of the sample belonging to class 0. The same process is repeated for class 1, and we pick the class with the highest probability.//
+
+        predictions.append(max(class_probabilities, key=class_probabilities.get))
+
+    return np.array(predictions)
+
+
+filename = "pima_diabetes.csv"
+
+columns = ['Pregnancies', 'Glucose', 'BloodPressure', 'SkinThickness', 'Insulin', 'BMI',
+           'DiabetesPedigreeFunction', 'Age', 'Outcome']
+                                                   //Column names are specified for better readability.
+
+df = pd.read_csv(filename, names=columns)
+
+X = df.drop(columns=['Outcome']).values
+y = df['Outcome'].values
+
+
+split_ratio = 0.8
+split_index = int(split_ratio * len(X))                   //split_index: Calculates the index where the dataset should be split.
+
+X_train, X_test = X[:split_index], X[split_index:]           
+y_train, y_test = y[:split_index], y[split_index:]            // [:split_index] First 80% of data. [split_index:] Remaining 20%. train 80% test 20%
+
+statistics = compute_statistics(X_train, y_train)
+
+y_pred = predict(X_test, statistics)                       // predict diabetes
+
+accuracy = np.mean(y_pred == y_test)                        //Compares y_pred (predicted labels) with y_test (actual labels).
+
+print(f"Accuracy of Gaussian Naïve Bayes: {accuracy:.4f}")
+
+
